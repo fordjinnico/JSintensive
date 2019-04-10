@@ -2,6 +2,7 @@ const switcher = document.querySelector('#cbx'),
     more = document.querySelector('.more'),
     modal = document.querySelector('.modal'),
     videos = document.querySelectorAll('.videos__item');
+    const videosWrapper = document.querySelector('.videos__wrapper');
 let player;
 
 function bindSlideToggle(trigger, boxBody, content, openClass) {
@@ -129,7 +130,7 @@ function start() {
         });
     }).then(function (response) {
         console.log(response.result);
-        const videosWrapper = document.querySelector('.videos__wrapper');
+        
         let timeout = 10;
         response.result.items.forEach(item => {
 
@@ -171,6 +172,61 @@ more.addEventListener('click', () => {
     gapi.load('client', start);
 });
 
+function search(target) {
+    gapi.client.init({
+        'apiKey': 'AIzaSyDE1veAmSAWIcKvtJ1IPdGEBH6Q3RIYkYA',
+        'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
+    }).then(function() {
+        return gapi.client.youtube.search.list({
+            'maxResults': '10',
+            'part': 'snippet',
+            'q': `${target}`,
+            'type': ''
+        });
+    }).then(function(response) {
+        console.log(response.result);
+        videosWrapper.innerHTML = '';
+
+        let timeout = 10;
+        response.result.items.forEach(item => {
+
+            let card = document.createElement('a');
+            card.classList.add('videos__item', 'videos__item-active');
+            card.setAttribute('data-url', item.id.videoId);
+            card.innerHTML = `
+        <img src="${item.snippet.thumbnails.high.url}" alt="thumb">
+        <div class="videos__item-descr">
+        ${item.snippet.title}
+        </div>
+        <div class="videos__item-views">
+        2.7k views
+        </div>
+        `;
+            videosWrapper.appendChild(card);
+            setTimeout(() => {
+                card.classList.remove('videos__item-active');
+            }, timeout);
+            timeout += 100;
+
+            if (night === true) {
+                card.querySelector('.videos__item-descr').style.color = '#fff';
+                card.querySelector('.videos__item-views').style.color = '#fff';
+            }
+            bindNewModal(card);
+
+        });
+
+        sliceTitle('.videos__item-descr', 65);
+        bindModal(document.querySelectorAll('.videos__item'));
+
+    })
+}
+
+document.querySelector('.search').addEventListener('submit', (e) => {
+e.preventDefault();
+gapi.load('client', () => { search(document.querySelector('.search > input').value);});
+});
+
 
 function sliceTitle(selector, count) {
     document.querySelectorAll(selector).forEach(item => {
@@ -206,7 +262,7 @@ function bindModal(cards) {
         });
     });
 }
-bindModal(videos);
+//bindModal(videos);
 
 function bindNewModal(cards) {
     cards.addEventListener('click', (e) => {
